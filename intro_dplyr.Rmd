@@ -24,6 +24,7 @@ And it's that simple. If you construct your datasets in the way described above,
 If you haven't already, install the 'dplyr' package and call it up with 'library()'.
 
 ```{r, include = T}
+library(readr) #You'll need to install this package to access data from my GitHub account
 library(dplyr)
 ```
 
@@ -31,7 +32,8 @@ Now lets load the dataset we are going to use for this exercise. I found a cool 
 
 
 ```{r, include = T}
-happiness <- read.csv("C:/Users/jakek/OneDrive/Documents/PhD_work/Lab_meetings/R_tips/world_happiness_UN.csv")
+x <- "https://raw.githubusercontent.com/kvistj/R-tips/master/world_happiness_UN.csv"
+happiness <- read_csv(url(x))
 happiness <- as_tibble(happiness)
 glimpse(happiness)
 ```
