@@ -1,0 +1,178 @@
+---
+title: "Intro to dplyr"
+author: "Jake Kvistad"
+date: "September 2, 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction to 'dplyr' or "How I learned to stop worrying and love the tibble"
+
+One really useful R package is 'dplyr'. This package was developed to make data wrangling simple and easy. Data wrangling is a crucial part of doing statistics or any data analysis task. Often, up to 80% of the time I spend with data is just manipulation, cleaning, and QA/QC tasks. A lot of this can be frustrating and boring, but thankfully 'dplyr' provides some very useful functionality for accomplishing data manipulation tasks. Now, I have to admit, I am still somewhat new to using 'dplyr' so this will be just as much of a learning experience for me.  
+
+'dplyr' is part of the 'tidyverse', which is a collection of R packages that all share the same underlying philosophy about data structures and coding grammar. I am not personally familiar with all of the 'tidyverse' packages yet, but I have found that I really like the ones I've used. Later when we get to plotting, we will work a lot with another 'tidyverse' package which is 'ggplot2'. If you are new to R, I highly recommend becoming familiar with the 'tidyverse' philosophy of data science. Unfortunately I started learning R just before 'tidyverse' really took off in popularity so I still sometimes fall back into old bad habits. But I am trying to retrain my brain to work within the 'tidyverse' philosophy whenever possible. You can learn more about the 'tidyverse' philosophy here: https://www.tidyverse.org/. For convenience, though, I think it will be helpful to explain the core tenets of the philosophy here, at least when it comes to data structures. If you maintain all of your data in the format that follows, I think you will find that working with your data will become much simpler and easier. Here are the three core tenets of tidy data:
+
+1. Every column represents a variable.
+2. Every row represents an observation.
+3. Every cell contains a single value.
+
+And it's that simple. If you construct your datasets in the way described above, you will save yourself a lot of time and effort in the data wrangling phase. Later I will dive deeper into the 'tidyr' package, which provides a number of tools for cleaning and tidying up your datasets. But for now let's get back to focusing on 'dplyr'. 
+
+If you haven't already, install the 'dplyr' package and call it up with 'library()'.
+
+```{r, include = T}
+library(dplyr)
+```
+
+Now lets load the dataset we are going to use for this exercise. I found a cool dataset collected by the U.N. on world happiness. I gathered data from the world happiness report from 2015 to 2019, which includes happieness scores from 150+ countries and a variety of other covariates, like GPD per capita, perceptions of corruption in government, and the quality of their social network (friends and family). To read more about their methodology and for the full reports, you can look here: https://worldhappiness.report/
+
+
+```{r, include = T}
+happiness <- read.csv("C:/Users/jakek/OneDrive/Documents/PhD_work/Lab_meetings/R_tips/world_happiness_UN.csv")
+happiness <- as_tibble(happiness)
+glimpse(happiness)
+```
+
+Notice the first thing I did was I converted the 'happiness' dataset into a tibble. What is a tibble? Tibbles are special kind of data frame that 'dplyr' is meant to be used with. Basically, a tibble is just a simpler data frame. They are designed to keep important features of the original data that was imported, meaning they do not convert data types automatically (i.e. converting characters to strings). You can also use non-standard names for your columns that include special symbols or spaces that normally R will throw fits about. There is not much of a difference in practice whether working with tibbles or data frames, but the idea behind the tibble is to force you to confront problems with your data efficiently and early to prevent headaches later on while doing analyses. 
+
+The 'glimpse()' function I just called is similar to the 'str()' function you met earlier. 'glimpse()' is part of 'dplyr' and it shows the structure of your data, as well as the first several values for each variable. 
+
+Without further ado, lets get into some of the main features of the 'dplyr' package. 
+
+## Filtering
+
+One of the most common data manipulation tasks is filtering. Most of the time, our datasets are large and we may only be interested in one group within our data at a time. The 'dplyr' package has a great function for helping us filter our data easily. All we have to do is call the 'filter()' function, which will select cases in our data based on the condition we specify. For example, what if I was only interested in European countries from the 'happiness' dataset?
+
+```{r, include = T}
+happiness %>% 
+  filter(Region == "Europe") #R uses double equals signs when specifying conditions
+```
+
+An important concept with the 'tidyverse' packages is the pipe operator '%>%'. The pipe '%>%' is basically a symbol that tells R to chain chunks of code together. Semantically, the code I wrote above could be thought of as "with the happiness dataset, return cases where region equals Europe". The pipe '%>%' acts as the 'with' in my sentence. It is the link that connects the object ('happiness') to the action (filter).
+
+Now it is important to note that R will perform these operations, but unless I save it in a new object, it will not be a permanent operation. For example, if I call up the 'happiness' dataset again, it will not be filtered out. 
+
+```{r, include = T}
+happiness
+
+#If I wanted to save a subsetted version of the data, I simply store the operation into a new object called 'EuropeanCountries'
+EuropeanCountries <- happiness %>% 
+                       filter(Region == "Europe")
+```
+
+How about if we wanted to compare European countries to North American countries and needed a subset of our data that only indluced those two regions?
+
+```{r, include = T}
+happiness %>% 
+  filter(Region %in% c("Europe", "North America"))
+```
+
+The '%in%' operator tells R to filter the 'happiness' dataset using the region names we specify IN the Region column. The way I like to think about it is "IN Region, find Europe and North America".
+
+Okay, but what if you wanted to filter your data based on conditions in more than one variable (column)? Let's look at an example.
+
+```{r, include = T}
+happiness %>% 
+  filter(Region == "Europe" & SocialSupport <= 1)
+```
+
+This statement include the '&' operator, which tells R that I want it to return cases that satisfy two conditions. In this case, I asked for countries that are in Europe AND have SocialSupport scores less than or equal to 1. 
+
+What if we wanted to see everything EXCEPT a certain case of our data? Rather than laying our a long list of filtering operations, we could just tell R to drop that one case. For example, what if we weren't that interested in countries with a high GDP? We could tell R to drop cases with a GDP above a certain value, say over 1.2. We would do the same as we did before with the SocialSupport condition, but now we need a new operator. The operator for dropping cases in R is '!'.
+
+```{r, include = T}
+happiness %>% 
+  filter(!GDPperCapita > 1.2)
+```
+
+## Arranging
+
+There is much more you can do with 'filter()' and your operations can get quite complex, but I am going to move on now and focus on another key function, 'arrange()'. 'arrange()' works by reordering your data by whichever columns you specify. 
+
+```{r, include = T}
+happiness %>%
+  arrange(Score)
+```
+
+Now the data is arranged in ascending order based on their happiness score. To get the descending order, I just need to include 'desc()' within 'arrange()'.
+
+```{r, include = T}
+happiness %>%
+  arrange(desc(Score))
+```
+
+You can also arrange your data based on more than one column. The order you specify your columns will tell R which columns to organize first by, then second, and so on. 
+
+```{r, include = T}
+happiness %>%
+  arrange(desc(Generosity), GDPperCapita)
+```
+
+## Slicing
+
+Slicing lets you select rows based on their integer locations. So if you knew the row positions for a group of data you wanted to get, you could use 'slice()'.
+
+```{r, include = T}
+happiness %>%
+  slice(15:30)
+```
+
+## Sampling
+
+A particularly useful feature of 'dplyr' is the ability to randomly sample from your data. This might be especially helpful for getting sample data to train an algorithm, for instance. Or for evaluating the performance of a model with some kind of cross-validation technique. Or for generating bootstrapped confidence intervals maybe.   
+
+```{r, include = T}
+happiness %>%
+  sample_n(size = 10) #Randomly samples 10 rows
+
+happiness %>%
+  sample_frac(size = 0.3) #Randomly samples 30% of the data
+
+happiness %>%
+  sample_frac(size = 0.3, replace = TRUE) #You can also add an argument to sample with replacement
+```
+
+
+## Selecting
+
+Selecting is a function similar to filter, except it's for columns instead of rows. When you use 'select()', you are asking R to find certain columns and return those for you. This is useful when you have a large dataset for which many variables are measure per observation, but you are only interested in a few at a time. 
+
+```{r, include = T}
+happiness %>%
+  dplyr::select(Year, Country, Score, PerceptionCorrupt)
+```
+
+Notice I had to append 'dplyr::' to the front of my select command. This is because I have multiple packages loaded that have a function called 'select()' and when I call 'select()', R is confused as to which function I want to use. So the bit of code 'dplyr::' tells R that I want to use the 'select()' function from 'dplyr::'. If you ever get weird errors when trying to run a function and you're sure that you didn't make any errors, look to see whether it's an issue with package conflict. 
+
+I can also select from variables that contain certain keywords.
+```{r, include = T}
+happiness %>%
+  dplyr::select(Year, Country, Score, contains("Life"))
+```
+
+## Mutating
+
+Very often, we want to perform vectorized operations no our data. The 'mutate()' function is a tool to do just that. For example, imagine that we have a dataset of survey results for some species. We might have columns that includes effort and then abundance for that species. We could easily use the 'mutate()' function to calculate an index of relative abundance using these two columns. 
+
+But let's look at an example with the 'happiness' data. Suppose we want a new column, let's call it 'Gen_to_GDP', and it will be a generosity to individual GDP ratio. Perhaps this is a more informative measurement than 'Generosity' because it should indicate how generous citizens of each country are in relation to how much money they make. 
+
+```{r, include = T}
+happiness %>% 
+  mutate(Gen_to_GDP = Generosity / GDPperCapita) %>%
+  arrange(desc(Gen_to_GDP))
+```
+
+Notice how this time I used pipes '%>%' to chain two statements together? This is a key feature of pipes - they allow you to chain together multiple operations to execute in a single command, rather than having to save each operation in a new object each time. Elegant use of pipes can help improve the readability of your code and reduce the amount of objects you need to keep track of.
+
+
+
+
+
+
+
+
+
+
