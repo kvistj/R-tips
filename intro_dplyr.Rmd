@@ -63,6 +63,7 @@ happiness
 #If I wanted to save a subsetted version of the data, I simply store the operation into a new object called 'EuropeanCountries'
 EuropeanCountries <- happiness %>% 
                        filter(Region == "Europe")
+EuropeanCountries
 ```
 
 How about if we wanted to compare European countries to North American countries and needed a subset of our data that only indluced those two regions?
@@ -169,7 +170,25 @@ happiness %>%
 
 Notice how this time I used pipes '%>%' to chain two statements together? This is a key feature of pipes - they allow you to chain together multiple operations to execute in a single command, rather than having to save each operation in a new object each time. Elegant use of pipes can help improve the readability of your code and reduce the amount of objects you need to keep track of.
 
+If you're interested in creating a new tibble entirely out of the mutated data, you can just use 'transmute()'.
 
+```{r, include = T}
+most_generous <- happiness %>% 
+                   transmute(Gen_to_GDP = Generosity / GDPperCapita) %>%
+                   arrange(desc(Gen_to_GDP))
+
+most_generous
+```
+
+Now I've taken the previous operation and stored it in a new object called 'most_generous', by simply replacing the 'mutate()' function with 'transmute()'.
+
+## Summarising
+
+One of the most useful tools in the 'dplyr' package is the 'summarise()' function. This function allows you to quickly generate summary statistics from your data in a simple and streamlined way. 
+
+```{r, include = T}
+
+```
 
 
 
